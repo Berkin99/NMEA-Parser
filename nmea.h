@@ -70,9 +70,9 @@ typedef struct NMEA_Message_s {
 }NMEA_Message_t;
 
 typedef struct NMEA_Date_s {
-	int16_t year;
-	int8_t month;
-	int8_t day;
+	int32_t year;
+	int32_t month;
+	int32_t day;
 }NMEA_Date_t;
 
 typedef struct NMEA_Time_s {
@@ -93,20 +93,20 @@ typedef struct NMEA_SatInfo_s {
 */
 typedef struct NMEA_Payload_GBS_s {
 	NMEA_Time_t time;
-	double errLat;
-	double errLon;
-	double errAlt;
+	float errLat;
+	float errLon;
+	float errAlt;
 	int32_t svid;
-	double prob;
-	double bias;
-	double stddev;
+	float prob;
+	float bias;
+	float stddev;
 }NMEA_Payload_GBS_t;
 
 typedef struct NMEA_Payload_GGA_s {
 	NMEA_Time_t time;
 	
-	double latitude;
-	double longitude;
+	float latitude;
+	float longitude;
 	
 	int8_t l_north;
 	int8_t l_east;
@@ -116,8 +116,8 @@ typedef struct NMEA_Payload_GGA_s {
 }NMEA_Payload_GGA_t;
 
 typedef struct NMEA_Payload_GLL_s {
-	double latitude;
-	double longitude;
+	float latitude;
+	float longitude;
 
 	int8_t l_north;
 	int8_t l_east;
@@ -130,13 +130,13 @@ typedef struct NMEA_Payload_GLL_s {
 
 typedef struct NMEA_Payload_GST_s {
 	NMEA_Time_t time;
-	double rangeRms;
-	double stdMajor;
-	double stdMinor;
-	double orient;
-	double stdLat;
-	double stdLon;
-	double stdAlt;
+	float rangeRms;
+	float stdMajor;
+	float stdMinor;
+	float orient;
+	float stdLat;
+	float stdLon;
+	float stdAlt;
 }NMEA_Payload_GST_t;
 
 typedef struct NMEA_Payload_GSA_s {
@@ -144,9 +144,9 @@ typedef struct NMEA_Payload_GSA_s {
 	uint8_t navMode;
 	uint8_t fix_type;
 	uint8_t sats[12];
-	double pdop;
-	double hdop;
-	double vdop;
+	float pdop;
+	float hdop;
+	float vdop;
 }NMEA_Payload_GSA_t;
 
 typedef struct NMEA_Payload_GSV_s {
@@ -159,23 +159,23 @@ typedef struct NMEA_Payload_GSV_s {
 typedef struct NMEA_Payload_RMC_s {
 	NMEA_Time_t time;
 	char status;
-	double latitude;
-	double longitude;
+	float latitude;
+	float longitude;
 	int8_t l_north;
 	int8_t l_east;
-	double speed;
-	double course;
+	float speed;
+	float course;
 	NMEA_Date_t date;
-	double variation;
+	float variation;
 	char posMode;
 	char navStatus;
 }NMEA_Payload_RMC_t;
 
 typedef struct NMEA_Payload_VTG_s {
-	double cogt;
-	double cogm;
-	double sogn;
-	double sogk;
+	float cogt;
+	float cogm;
+	float sogn;
+	float sogk;
 	char posMode;
 }NMEA_Payload_VTG_t;
 
@@ -228,4 +228,4 @@ uint8_t NMEA_VTG_Parse(NMEA_Payload_VTG_t* frame, const NMEA_Message_t* msg);
 uint8_t NMEA_ZDA_Parse(NMEA_Payload_ZDA_t* frame, const NMEA_Message_t* msg);
 
 
-#endif /* INC_NMEA_H_ */
+#endif /* INC_NMEA_H */
