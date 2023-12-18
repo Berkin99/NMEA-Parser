@@ -90,6 +90,13 @@ typedef struct NMEA_SatInfo_s {
 	int32_t snr;
 }NMEA_SatInfo_t;
 
+typedef struct NMEA_Location_s {
+	int32_t latitude;	// Degrees as integer
+	int32_t longitude;	// Degrees as integer
+	int8_t ns_d;		// North South Direction
+	int8_t ew_d;		// East West Direction
+}NMEA_Location_t;
+
 /*
 *  Payload Structs
 */
@@ -106,24 +113,13 @@ typedef struct NMEA_Payload_GBS_s {
 
 typedef struct NMEA_Payload_GGA_s {
 	NMEA_Time_t time;
-
-	float latitude;
-	float longitude;
-
-	int8_t l_north;
-	int8_t l_east;
-
+	NMEA_Location_t location;
 	uint8_t quality;
 	uint8_t satellite_n;
 }NMEA_Payload_GGA_t;
 
 typedef struct NMEA_Payload_GLL_s {
-	float latitude;
-	float longitude;
-
-	int8_t l_north;
-	int8_t l_east;
-
+	NMEA_Location_t location;
 	NMEA_Time_t time;
 
 	char status;
@@ -161,10 +157,7 @@ typedef struct NMEA_Payload_GSV_s {
 typedef struct NMEA_Payload_RMC_s {
 	NMEA_Time_t time;
 	char status;
-	float latitude;
-	float longitude;
-	int8_t l_north;
-	int8_t l_east;
+	NMEA_Location_t location;
 	float speed;
 	float course;
 	NMEA_Date_t date;
@@ -198,18 +191,19 @@ uint8_t NMEA_Find_PayloadID(const char* msg);
 /**
  * Scanf-like processor for NMEA sentences. Supports the following formats:
  * c - single character (char *)
- * d - decimal number (int32_t *)
- * f - fractional, returned as value + scale (struct nmea_float *)
+ * d - signed decimal number (int32_t *)
+ * f - signed fractional number (double *)
  * u - unsigned decimal, default zero (uint32_t *)
+ * i - unsigned byte (uint8_t *)
  * s - string (char *)
- * D - date (struct minmea_date *)
- * T - time stamp (struct minmea_time *)
+ * q - direction N,E = 1 : S,W = -1 (int8_t *)
+ * D - date (NMEA_Date *)
+ * T - time stamp (NMEA_Time *)
+ * L - location (NMEA_Location.latitude *) "latitude,longitude"
  * _ - ignore this field
  * Returns true on success. See library source code for details.
  */
 uint8_t NMEA_Scan(const NMEA_Message_t* msg, const char* format, ...);
-
-float NMEA_LLConvert(float value);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

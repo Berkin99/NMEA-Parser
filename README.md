@@ -54,19 +54,17 @@ int main(void) {
 }
 
 void print_gga(const NMEA_Payload_GGA_t* frame) {
-
 	printf("- PAYLOAD GGA -\n");
 
 	printf("HOUR : %d\n", frame->time.hour);
 	printf("MIN : %d\n", frame->time.min);
 	printf("SEC : %d\n", frame->time.sec);
-	printf("LATITUDE : %f\n", frame->latitude);
-	printf("L_NORTH : %d\n", frame->l_north);
-	printf("LONGITUDE : %f\n", frame->longitude);
-	printf("L_EAST : %d\n", frame->l_east);
+	printf("LATITUDE : %d\n", frame->location.latitude);
+	printf("L_NORTH : %d\n", frame->location.ns_d);
+	printf("LONGITUDE : %d\n", frame->location.longitude);
+	printf("L_EAST : %d\n", frame->location.ew_d);
 	printf("QUALITY : %d\n", frame->quality);
 	printf("SATELLITE N : %d\n", frame->satellite_n);
-
 }
 
 ```

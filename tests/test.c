@@ -5,7 +5,9 @@
  *
  *  NMEA 0183 Protocol Parser for Ublox GNSS Receivers.
  *	Easy to use for all NMEA applications / Extendable NMEA message ID library.
- *
+ *  
+ *  All valid messages are from UBLOX receiver description manual. 
+ *  	 
  */
 
 
@@ -13,6 +15,7 @@
 #include "nmea.h"
 
 #define MESSAGE_LIST_LEN 10
+#define DEBUG_MODE	
 
 char* valid_msg[] = { 
 	"$GNGBS,170556.00,3.0,2.9,8.3,,,,*5C",
@@ -40,7 +43,7 @@ char* corrupted_msg[] = {
 	"$GPZDA,082710.00,16,09",
 };
 
-static char* test_msg = "$GNGGA,092725.00,4717.11399,N,00833.91590,E,1,08,1.01,499.6,M,48.0,M,,*5B";
+static char* test_msg = "$GNGGA,P9PP2725.00,4717.11399,N,00833.91590,E,1,08,1.01,499.6,M,48.0,M,,*5B\r\n";
 
 static NMEA_Message_t temp;
 
@@ -67,7 +70,8 @@ void print_vtg(const NMEA_Payload_VTG_t* frame);
 void print_zda(const NMEA_Payload_ZDA_t* frame);
 
 int main(void) {
-	
+
+	//nmea_tester(test_msg);
 	for (uint8_t i = 0; i <MESSAGE_LIST_LEN ; i++)
 	{
 		test_msg = valid_msg[i];
@@ -129,7 +133,6 @@ void nmea_tester(const NMEA_Message_t* test_) {
 
 
 void print_gbs(const NMEA_Payload_GBS_t* frame) {
-
 	printf("- PAYLOAD GBS -\n");
 
 	printf("HOUR : %d\n", frame->time.hour);
@@ -142,39 +145,34 @@ void print_gbs(const NMEA_Payload_GBS_t* frame) {
 	printf("PROB : %f\n", frame->prob);
 	printf("BIAS : %f\n", frame->bias);
 	printf("STDDEV : %f\n", frame->stddev);
-
 }
 
 void print_gga(const NMEA_Payload_GGA_t* frame) {
-
 	printf("- PAYLOAD GGA -\n");
 
 	printf("HOUR : %d\n", frame->time.hour);
 	printf("MIN : %d\n", frame->time.min);
 	printf("SEC : %d\n", frame->time.sec);
-	printf("LATITUDE : %f\n", frame->latitude);
-	printf("L_NORTH : %d\n", frame->l_north);
-	printf("LONGITUDE : %f\n", frame->longitude);
-	printf("L_EAST : %d\n", frame->l_east);
+	printf("LATITUDE : %d\n", frame->location.latitude);
+	printf("L_NORTH : %d\n", frame->location.ns_d);
+	printf("LONGITUDE : %d\n", frame->location.longitude);
+	printf("L_EAST : %d\n", frame->location.ew_d);
 	printf("QUALITY : %d\n", frame->quality);
 	printf("SATELLITE N : %d\n", frame->satellite_n);
-
 }
 
 void print_gll(const NMEA_Payload_GLL_t* frame) {
-
 	printf("- PAYLOAD GLL -\n");
 
 	printf("HOUR : %d\n", frame->time.hour);
 	printf("MIN : %d\n", frame->time.min);
 	printf("SEC : %d\n", frame->time.sec);
-	printf("LATITUDE : %f\n", frame->latitude);
-	printf("L_NORTH : %d\n", frame->l_north);
-	printf("LONGITUDE : %f\n", frame->longitude);
-	printf("L_EAST : %d\n", frame->l_east);
+	printf("LATITUDE : %d\n", frame->location.latitude);
+	printf("L_NORTH : %d\n", frame->location.ns_d);
+	printf("LONGITUDE : %d\n", frame->location.longitude);
+	printf("L_EAST : %d\n", frame->location.ew_d);
 	printf("POSMODE : %c\n", frame->posMode);
 	printf("STATUS : %c\n", frame->status);
-
 }
 
 void print_gst(const NMEA_Payload_GST_t* frame) {
@@ -211,7 +209,6 @@ void print_gsa(const NMEA_Payload_GSA_t* frame) {
 }
 
 void print_gsv(const NMEA_Payload_GSV_t* frame) {
-	
 	printf("- PAYLOAD GSV -\n");
 
 	printf("NUM MSG : %d\n", frame->numMsg);
@@ -237,11 +234,11 @@ void print_rmc(const NMEA_Payload_RMC_t* frame) {
 
 	printf("STATUS : %c\n", frame->status);
 
-	printf("LATITUDE : %f\n", frame->latitude);
-	printf("L_NORTH : %d\n", frame->l_north);
-	printf("LONGITUDE : %f\n", frame->longitude);
-	printf("L_EAST : %d\n", frame->l_east);
-	
+	printf("LATITUDE : %d\n", frame->location.latitude);
+	printf("L_NORTH : %d\n", frame->location.ns_d);
+	printf("LONGITUDE : %d\n", frame->location.longitude);
+	printf("L_EAST : %d\n", frame->location.ew_d);
+
 	printf("SPEED : %f\n", frame->speed);
 	printf("COURSE : %f\n", frame->course);
 	

@@ -163,15 +163,7 @@ bool NMEA_NextField(const char* msg) {
 	return false;
 }
 
-/* NMEA minute to degree location converter.
-*/
-float NMEA_LLConvert(float value) {
-	int32_t temp_deg = (int)(value / 100);
-	double temp_m = value - (temp_deg * 100);
-	temp_m /= 60;
-	temp_m += (double)temp_deg;
-	return temp_m;
-}
+
 
 /**
  * Scanf-like processor for NMEA sentences. Supports the following formats:
@@ -184,7 +176,7 @@ float NMEA_LLConvert(float value) {
  * q - direction N,E = 1 : S,W = -1 (int8_t *)
  * D - date (NMEA_Date *)
  * T - time stamp (NMEA_Time *)
- * L - location (NMEA_Location *) "latitude,N,longitude,E"
+ * L - location (NMEA_Location.latitude *) "latitude,longitude"
  * _ - ignore this field
  * Returns true on success. See library source code for details.
  */
@@ -246,7 +238,7 @@ uint8_t NMEA_Scan(const NMEA_Message_t* msg, const char* format, ...) {
 			if (!(DIGIT_CONTROL(main_cursor[1]) || main_cursor[1] == '-')) goto parse_error;
 
 			char* ptr;
-			*va_arg(payload, uint32_t*) = strtol(&main_cursor[1], &ptr, 10);
+			*va_arg(payload, uint32_t*) = (uint32_t)strtol(&main_cursor[1], &ptr, 10);
 		} break;
 
 		case ('i'): { /* uint8_t */
@@ -351,11 +343,41 @@ uint8_t NMEA_Scan(const NMEA_Message_t* msg, const char* format, ...) {
 			time_->sec = s;
 
 		} break;
-		case 'L': {
+		case 'L': { /* location int32_t */
+			if (FIELD_CONTROL(main_cursor[1])) {
+				*va_arg(payload,int32_t*) = -1;
+				break;
+			}
+			if (!(DIGIT_CONTROL(main_cursor[1]) || main_cursor[1] == '-')) goto parse_error;
+			
+			int32_t val, scl = 0;
+			int32_t temp = 0;
+			char* ptr;
+			val = strtol(&main_cursor[1], &ptr, 10);
+			scl = strtol(&ptr[1], &ptr, 10);
 
+			temp = (val / 100);
+			temp *= 100;
 
-		}break;
+			scl += (val - temp) * 100000;
+			scl *= 10;
+			scl /=6 ;
+			
+			temp *= 100000;
+			temp += scl;
+			*va_arg(payload, int32_t*) = temp;
 
+		} break;
+		case 'F': { /* double */
+			if (FIELD_CONTROL(main_cursor[1])) {
+				*va_arg(payload, double*) = 0;
+				break;
+			}
+			if (!(DIGIT_CONTROL(main_cursor[1]) || main_cursor[1] == '-')) goto parse_error;
+
+			char* ptr;
+			*va_arg(payload, double*) = strtod(&main_cursor[1], &ptr);
+		} break;
 		case '_': { /* Ignore Field */
 		}break;
 		default: { /* Unknown */
@@ -409,12 +431,12 @@ uint8_t NMEA_GGA_Parse(NMEA_Payload_GGA_t* frame, const NMEA_Message_t* msg) {
 
 	//$GNGGA,092725.00,4717.11399,N,00833.91590,E,1,08,1.01,499.6,M,48.0,M,,*5B
 
-	return NMEA_Scan(msg, "Tfqfqii",
+	return NMEA_Scan(msg, "TLqLqii",
 		&frame->time,
-		&frame->latitude,
-		&frame->l_north,
-		&frame->longitude,
-		&frame->l_east,
+		&frame->location.latitude,
+		&frame->location.ns_d,
+		&frame->location.longitude,
+		&frame->location.ew_d,
 		&frame->quality,
 		&frame->satellite_n
 	);
@@ -428,11 +450,11 @@ uint8_t NMEA_GLL_Parse(NMEA_Payload_GLL_t* frame, const NMEA_Message_t* msg) {
 
 	//$GPGLL,4717.11364,N,00833.91565,E,092321.00,A,A*60
 
-	return NMEA_Scan(msg, "fqfqTcc",
-		&frame->latitude,
-		&frame->l_north,
-		&frame->longitude,
-		&frame->l_east,
+	return NMEA_Scan(msg, "LqLqTcc",
+		&frame->location.latitude,
+		&frame->location.ns_d,
+		&frame->location.longitude,
+		&frame->location.ew_d,
 		&frame->time,
 		&frame->status,
 		&frame->posMode
@@ -524,13 +546,13 @@ uint8_t NMEA_RMC_Parse(NMEA_Payload_RMC_t* frame, const NMEA_Message_t* msg) {
 
 	//$GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A,V*57
 
-	return (uint8_t)NMEA_Scan(msg, "TcfqfqffDf_c",
+	return (uint8_t)NMEA_Scan(msg, "TcLqLqffDf_c",
 		&frame->time,
 		&frame->status,
-		&frame->latitude,
-		&frame->l_north,
-		&frame->longitude,
-		&frame->l_east,
+		&frame->location.latitude,
+		&frame->location.ns_d,
+		&frame->location.longitude,
+		&frame->location.ew_d,
 		&frame->speed,
 		&frame->course,
 		&frame->date,
