@@ -14,7 +14,7 @@
  *  payloadID messages. 
  *	
  *	16.12.2023 : Usage of generalized scan algorithym. 
- *  "kosma/minmea/blob/master/minmea.c#L462" minmea_scan()
+ *  "kosma/minmea" minmea_scan()
  *	Added GBS, RMC, GLL, GST, GSA, GSV, VTG, ZDA.
  * 
  *	References: 
@@ -163,11 +163,11 @@ bool NMEA_NextField(const char* msg) {
 
 /* NMEA minute to degree location converter.
 */
-double NMEA_LLConvert(double value) {
+float NMEA_LLConvert(float value) {
 	int32_t temp_deg = (int)(value / 100);
-	double temp_m = value - (temp_deg * 100);
+	float temp_m = value - (temp_deg * 100);
 	temp_m /= 60;
-	temp_m += (double)temp_deg;
+	temp_m += (float)temp_deg;
 	return temp_m;
 }
 

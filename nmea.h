@@ -14,7 +14,7 @@
  *  payloadID messages.
  *
  *	16.12.2023 : Usage of generalized scan algorithym.
- *  "kosma/minmea/blob/master/minmea.c#L462" minmea_scan()
+ *  "kosma/minmea" minmea_scan()
  *	Added GBS, RMC, GLL, GST, GSA, GSV, VTG, ZDA.
  *
  *	References:
@@ -206,6 +206,8 @@ uint8_t NMEA_Find_PayloadID(const char* msg);
  * Returns true on success. See library source code for details.
  */
 bool NMEA_Scan(const NMEA_Message_t* msg, const uint8_t* format, ...);
+
+float NMEA_LLConvert(float value);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
