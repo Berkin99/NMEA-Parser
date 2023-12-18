@@ -17,11 +17,13 @@
  *  "kosma/minmea" minmea_scan()
  *	Added GBS, RMC, GLL, GST, GSA, GSV, VTG, ZDA.
  *
+ *	18.12.2023 : Compiler satisfy changes.
+ *
  *	References:
  *  [0] The National Marine Electronics Association (NMEA) 0183. Manual Klaus Betke, May 2000. Revised August 2001.
  *	[1] u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)
  *  [2] github.com/kosma/minmea
- * 
+ *
  */
 
 #ifndef INC_NMEA_H_
@@ -104,10 +106,10 @@ typedef struct NMEA_Payload_GBS_s {
 
 typedef struct NMEA_Payload_GGA_s {
 	NMEA_Time_t time;
-	
+
 	float latitude;
 	float longitude;
-	
+
 	int8_t l_north;
 	int8_t l_east;
 
@@ -121,9 +123,9 @@ typedef struct NMEA_Payload_GLL_s {
 
 	int8_t l_north;
 	int8_t l_east;
-	
+
 	NMEA_Time_t time;
-	
+
 	char status;
 	char posMode;
 }NMEA_Payload_GLL_t;
@@ -205,7 +207,7 @@ uint8_t NMEA_Find_PayloadID(const char* msg);
  * _ - ignore this field
  * Returns true on success. See library source code for details.
  */
-bool NMEA_Scan(const NMEA_Message_t* msg, const uint8_t* format, ...);
+uint8_t NMEA_Scan(const NMEA_Message_t* msg, const char* format, ...);
 
 float NMEA_LLConvert(float value);
 

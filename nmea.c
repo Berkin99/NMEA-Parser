@@ -5,19 +5,21 @@
  *      Author: BerkN
  *
  *  NMEA 0183 Protocol Parser for Ublox GNSS Receivers.
- *	Easy to use for all NMEA applications / Extendable NMEA message ID library. 
- * 
- *  13.12.2023 : File is created for read UBLOX GNSS NMEA messages. Detect & 
+ *	Easy to use for all NMEA applications / Extendable NMEA message ID library.
+ *
+ *  13.12.2023 : File is created for read UBLOX GNSS NMEA messages. Detect &
  *  parse GGA lines and return NMEA_GGA_t.
- *	
- *	14.12.2023 : NMEA_Pack, detects all valid [1] Ublox_M8 receiver talkerID & 
- *  payloadID messages. 
- *	
- *	16.12.2023 : Usage of generalized scan algorithym. 
+ *
+ *	14.12.2023 : NMEA_Pack, detects all valid [1] Ublox_M8 receiver talkerID &
+ *  payloadID messages.
+ *
+ *	16.12.2023 : Usage of generalized scan algorithym.
  *  "kosma/minmea" minmea_scan()
  *	Added GBS, RMC, GLL, GST, GSA, GSV, VTG, ZDA.
- * 
- *	References: 
+ *
+ *	18.12.2023 : Compiler satisfy changes.
+ *
+ *	References:
  *  [0] The National Marine Electronics Association (NMEA) 0183. Manual Klaus Betke, May 2000. Revised August 2001.
  *	[1] u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)
  */
@@ -60,7 +62,7 @@ static const NMEA_Identifer_t PayloadID_Data[] = {
 	{NMEA_MSG_GLL, "GLL"}, // Has NMEA Parser
 	{NMEA_MSG_GLQ, "GLQ"},
 	{NMEA_MSG_GNQ, "GNQ"},
-	{NMEA_MSG_GNS, "GNS"}, 
+	{NMEA_MSG_GNS, "GNS"},
 	{NMEA_MSG_GPQ, "GPQ"},
 	{NMEA_MSG_GRS, "GRS"},
 	{NMEA_MSG_GSA, "GSA"}, // Has NMEA Parser
@@ -74,33 +76,33 @@ static const NMEA_Identifer_t PayloadID_Data[] = {
 };
 
 static char* main_cursor;
-static uint16_t index;
+static uint16_t main_index;
 
 static char talkerid[2];
 static char payloadid[3];
 
-bool NMEA_Pack(NMEA_Message_t* ref, const uint8_t* msg) {
-	
-	if (*msg != '$') return false;
+bool NMEA_Pack(NMEA_Message_t* ref, const uint8_t* raw) {
 
-	index = 1;
+	if (*raw != '$') return false;
+
+	main_index = 1;
 	uint8_t i;
 
 	for (i = 0; i < NMEA_TALKER_ID_LEN; i++) {
-		talkerid[i] = msg[index];
-		index++;
+		talkerid[i] = raw[main_index];
+		main_index++;
 	}
 
 	for (i = 0; i < NMEA_PAYLOAD_ID_LEN; i++) {
-		payloadid[i] = msg[index];
-		index++;
+		payloadid[i] = raw[main_index];
+		main_index++;
 	}
 
 
-	ref->rawdata = msg;
+	ref->rawdata = (uint8_t*)raw;
 	ref->talkerId = NMEA_Find_TalkerID(talkerid);
 	ref->payloadId = NMEA_Find_PayloadID(payloadid);
-	ref->payload = &msg[index];
+	ref->payload = (uint8_t*)&raw[main_index];
 
 	return true;
 }
@@ -109,7 +111,7 @@ uint8_t NMEA_Checksum(const char* msg)
 {
 	/* Support senteces with or without the starting dollar sign. */
 	if (*msg == '$') msg++;
-	
+
 	uint8_t checksum = 0x00;
 
 	/*  The optional checksum is an XOR of all bytes between "$" and "*". */
@@ -143,20 +145,20 @@ uint8_t NMEA_Find_PayloadID(const char* msg) {
 
 /**
 * Carries main_cursor to the next ',' value of field.
-* @param index = Counts move iterations.
+* @param main_index = Counts move iterations.
 * Returns 1 if there is a field.
 * Returns 0 if found <message end symbol> or <field len overflow>.
 */
 bool NMEA_NextField(const char* msg) {
-	for (index = 1; index < NMEA_MAX_FIELD_LEN; index++) {
-		if (msg[index] == ',') {
-			main_cursor = &msg[index];
+	for (main_index = 1; main_index < NMEA_MAX_FIELD_LEN; main_index++) {
+		if (msg[main_index] == ',') {
+			main_cursor = (char*)&msg[main_index];
 			return true;
 		}
-		if (msg[index] == '*') {
-			main_cursor = &msg[index];
+		if (msg[main_index] == '*') {
+			main_cursor = (char*)&msg[main_index];
 			return false;
-		} 
+		}
 	}
 	return false;
 }
@@ -165,9 +167,9 @@ bool NMEA_NextField(const char* msg) {
 */
 float NMEA_LLConvert(float value) {
 	int32_t temp_deg = (int)(value / 100);
-	float temp_m = value - (temp_deg * 100);
+	double temp_m = value - (temp_deg * 100);
 	temp_m /= 60;
-	temp_m += (float)temp_deg;
+	temp_m += (double)temp_deg;
 	return temp_m;
 }
 
@@ -179,27 +181,27 @@ float NMEA_LLConvert(float value) {
  * u - unsigned decimal, default zero (uint32_t *)
  * i - unsigned byte (uint8_t *)
  * s - string (char *)
- * q - direction N,E = 1 : S,W = -1 (int8_t *)  
+ * q - direction N,E = 1 : S,W = -1 (int8_t *)
  * D - date (NMEA_Date *)
  * T - time stamp (NMEA_Time *)
  * L - location (NMEA_Location *) "latitude,N,longitude,E"
  * _ - ignore this field
  * Returns true on success. See library source code for details.
  */
-bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
-	
-	if (msg->payload == NULL) return false;
-	
-	bool result = false;
+uint8_t NMEA_Scan(const NMEA_Message_t* msg, const char* format, ...) {
 
-	main_cursor = msg->payload;				// main_cursor[0] points the first ',' element of payload section. 
+	if (msg->payload == NULL) return 0;
+
+	uint8_t result = 0;
+
+	main_cursor = (char*)msg->payload;				// main_cursor[0] points the first ',' element of payload section.
 
 	va_list payload;
 	va_start(payload, format);
 
-#define FIELD_CONTROL(cursor) (cursor == ',' || cursor == '*') 
+#define FIELD_CONTROL(cursor) (cursor == ',' || cursor == '*')
 
-#define DIGIT_CONTROL(val) ( (val>='0' && val<='9') || val=='-')
+#define DIGIT_CONTROL(val) (val>='0' && val<='9')
 
 	while (*format) {
 		char type = *format++;				// Get the current format char. && Post increment.
@@ -219,10 +221,10 @@ bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
 				*va_arg(payload, int32_t*) = 0;
 				break;
 			}
-			if (!DIGIT_CONTROL(main_cursor[1])) goto parse_error;
+			if (!(DIGIT_CONTROL(main_cursor[1]) || main_cursor[1] == '-')) goto parse_error;
 
 			char* ptr;
-			*va_arg(payload, int32_t*) = strtol(&main_cursor[1], &ptr, 10); 
+			*va_arg(payload, int32_t*) = strtol(&main_cursor[1], &ptr, 10);
 		} break;
 
 		case 'f': { /* double */
@@ -230,30 +232,30 @@ bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
 				*va_arg(payload, float*) = 0;
 				break;
 			}
-			if (!DIGIT_CONTROL(main_cursor[1])) goto parse_error;
+			if (!(DIGIT_CONTROL(main_cursor[1]) || main_cursor[1] == '-')) goto parse_error;
 
 			char* ptr;
 			*va_arg(payload, float*) = strtod(&main_cursor[1], &ptr);
 		} break;
-		
+
 		case ('u'): { /* uint32_t */
 			if (FIELD_CONTROL(main_cursor[1])) {
 				*va_arg(payload, uint32_t*) = 0;
 				break;
 			}
-			if (!DIGIT_CONTROL(main_cursor[1])) goto parse_error;
+			if (!(DIGIT_CONTROL(main_cursor[1]) || main_cursor[1] == '-')) goto parse_error;
 
 			char* ptr;
 			*va_arg(payload, uint32_t*) = strtol(&main_cursor[1], &ptr, 10);
 		} break;
-		
+
 		case ('i'): { /* uint8_t */
 			if (FIELD_CONTROL(main_cursor[1])) {
 				*va_arg(payload, uint8_t*) = 0;
 				break;
 			}
 
-			if (DIGIT_CONTROL(!main_cursor[1])) goto parse_error;
+			if (!(DIGIT_CONTROL(main_cursor[1]) || main_cursor[1] == '-')) goto parse_error;
 
 			char* ptr;
 			*va_arg(payload, uint8_t*) = (uint8_t)strtol(&main_cursor[1], &ptr, 10);
@@ -267,34 +269,34 @@ bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
 				*ptr++ = main_cursor[i];
 				i++;
 			}
-		} break; 
-		
+		} break;
+
 		case 'q': { /* direction int8_t */
 			if (FIELD_CONTROL(main_cursor[1])) {
 				*va_arg(payload, int8_t*) = 0;
 				break;
 			}
-			int8_t direction= 0;
-			
+			int8_t direction = 0;
+
 			switch (main_cursor[1]) {
-				case 'N':
-				case 'E': {
-					direction = 1;
-				}break;
-				case 'S':
-				case 'W': {
-					direction = -1;
-				}break;
-					
-				default: {
-					goto parse_error;
-				}break;
+			case 'N':
+			case 'E': {
+				direction = 1;
+			}break;
+			case 'S':
+			case 'W': {
+				direction = -1;
+			}break;
+
+			default: {
+				goto parse_error;
+			}break;
 			}
 
 			*va_arg(payload, int8_t*) = direction;
 
 		} break;
-		
+
 		case 'D': {
 			NMEA_Date_t* date_ = va_arg(payload, NMEA_Date_t*);
 
@@ -304,7 +306,7 @@ bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
 				date_->day = -1;
 				break;
 			}
-			
+
 			int16_t y = -1;
 			int8_t  m, d = -1;
 
@@ -312,7 +314,7 @@ bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
 			char dArr[] = { main_cursor[1], main_cursor[2], '\0' };
 			char mArr[] = { main_cursor[3], main_cursor[4], '\0' };
 			char yArr[] = { main_cursor[5], main_cursor[6], '\0' };
-			
+
 			d = (int8_t)strtol(dArr, NULL, 10);
 			m = (int8_t)strtol(mArr, NULL, 10);
 			y = (int16_t)strtol(yArr, NULL, 10);
@@ -320,33 +322,33 @@ bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
 			y += 2000;
 
 			date_->year = y;
-			date_->month  = m;
-			date_->day  = d;
+			date_->month = m;
+			date_->day = d;
 
 		} break;
 		case 'T': {
-			
+
 			NMEA_Time_t* time_ = va_arg(payload, NMEA_Time_t*);
-			
-			if (FIELD_CONTROL(main_cursor[1])) { 
+
+			if (FIELD_CONTROL(main_cursor[1])) {
 				time_->hour = -1;
 				time_->min = -1;
 				time_->sec = -1;
-				break; 
+				break;
 			}
 			int8_t h, m, s = -1;
 
 			char hArr[] = { main_cursor[1], main_cursor[2], '\0' };
 			char mArr[] = { main_cursor[3], main_cursor[4], '\0' };
-			char sArr[] = { main_cursor[5], main_cursor[6], '\0'};
-			
+			char sArr[] = { main_cursor[5], main_cursor[6], '\0' };
+
 			h = (int8_t)strtol(hArr, NULL, 10);
 			m = (int8_t)strtol(mArr, NULL, 10);
 			s = (int8_t)strtol(sArr, NULL, 10);
 
 			time_->hour = h;
-			time_->min  = m;
-			time_->sec  = s;
+			time_->min = m;
+			time_->sec = s;
 
 		} break;
 		case 'L': {
@@ -360,15 +362,15 @@ bool NMEA_Scan(const NMEA_Message_t * msg, const uint8_t *format,...) {
 			goto parse_error;
 		}break;
 		} /* SWITCH_CASE */
-	
+
 		if (!NMEA_NextField(main_cursor)) {
-			if (main_cursor[0] == '*') result = true;
+			if (main_cursor[0] == '*') result = 1;
 			break;
 		}
 
 	}
-	
-	result = true;
+
+	result = 1;
 
 parse_error:
 	va_end(payload);
@@ -473,7 +475,7 @@ uint8_t NMEA_GST_Parse(NMEA_Payload_GST_t* frame, const NMEA_Message_t* msg) {
 
 	//$GPGST,082356.00,1.8,,,,1.7,1.3,2.2*7E
 
-	return NMEA_Scan(msg, "Tfffffff",
+	return (uint8_t)NMEA_Scan(msg, "Tfffffff",
 		&frame->time,
 		&frame->rangeRms,
 		&frame->stdMajor,
@@ -492,7 +494,7 @@ uint8_t NMEA_GSV_Parse(NMEA_Payload_GSV_t* frame, const NMEA_Message_t* msg) {
 
 	//$GPGSV,1,1,03,12,,,42,24,,,47,32,,,37,5*66
 
-	return NMEA_Scan(msg, "iiddddddddddddddddd",
+	return (uint8_t)NMEA_Scan(msg, "iiddddddddddddddddd",
 		&frame->msgNum,
 		&frame->numMsg,
 		&frame->numSV,
@@ -522,7 +524,7 @@ uint8_t NMEA_RMC_Parse(NMEA_Payload_RMC_t* frame, const NMEA_Message_t* msg) {
 
 	//$GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A,V*57
 
-	return NMEA_Scan(msg, "TcfqfqffDf_c",
+	return (uint8_t)NMEA_Scan(msg, "TcfqfqffDf_c",
 		&frame->time,
 		&frame->status,
 		&frame->latitude,
@@ -545,7 +547,7 @@ uint8_t NMEA_VTG_Parse(NMEA_Payload_VTG_t* frame, const NMEA_Message_t* msg) {
 
 	//$GPVTG,77.52,T,,M,0.004,N,0.008,K,A*06
 
-	return NMEA_Scan(msg, "f_f_f_f_c",
+	return (uint8_t)NMEA_Scan(msg, "f_f_f_f_c",
 		&frame->cogt,
 		&frame->cogm,
 		&frame->sogn,
@@ -561,7 +563,7 @@ uint8_t NMEA_ZDA_Parse(NMEA_Payload_ZDA_t* frame, const NMEA_Message_t* msg) {
 
 	//$GPZDA,082710.00,16,09,2002,00,00*64
 
-	return NMEA_Scan(msg, "Tddddd",
+	return (uint8_t)NMEA_Scan(msg, "Tddddd",
 		&frame->time,
 		&frame->date.day,
 		&frame->date.month,
