@@ -22,7 +22,10 @@ void print_gga(const NMEA_Payload_GGA_t* frame);
 
 int main(void) {
 	NMEA_Pack(&temp, test_msg);
-	NMEA_GGA_Parse(&frame_gga, &temp);
+	
+	if( temp.payloadId == NMEA_MSG_GGA ){
+		NMEA_GGA_Parse(&frame_gga, &temp);
+	}
 
 	printf("TESTING MSG : %s \n\n", test_msg);
 	print_gga(&frame_gga);
