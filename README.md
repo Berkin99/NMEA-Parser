@@ -50,10 +50,9 @@ int main(void) {
 
 	if( temp.payloadId == NMEA_MSG_GGA ){
 		NMEA_GGA_Parse(&frame_gga, &temp);
+		printf("TESTING MSG : %s \n\n", test_msg);
+		print_gga(&frame_gga);
 	}
-
-	printf("TESTING MSG : %s \n\n", test_msg);
-	print_gga(&frame_gga);
 }
 
 void print_gga(const NMEA_Payload_GGA_t* frame) {
