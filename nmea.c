@@ -18,10 +18,14 @@
  *	Added GBS, RMC, GLL, GST, GSA, GSV, VTG, ZDA.
  *
  *	18.12.2023 : Compiler satisfy changes.
- *
+ *  
+ *  18.01.2024 : ID search optimization.
+ * 
  *	References:
  *  [0] The National Marine Electronics Association (NMEA) 0183. Manual Klaus Betke, May 2000. Revised August 2001.
  *	[1] u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)
+ *  [2] github.com/kosma/minmea
+ *
  */
 
 #include <string.h>
@@ -75,6 +79,11 @@ static const NMEA_Identifer_t PayloadID_Data[] = {
 	{NMEA_MSG_ZDA, "ZDA"}, // Has NMEA Parser
 };
 
+static const PayloadID_Size = ARRAY_SIZE(PayloadID_Data);
+static const TalkerID_Size = ARRAY_SIZE(TalkerID_Data);
+
+////////////////////////////////////////////////////////////////////////////////////////
+
 static char* main_cursor;
 static uint16_t main_index;
 
@@ -121,8 +130,8 @@ uint8_t NMEA_Checksum(const char* msg)
 }
 
 uint8_t NMEA_Find_TalkerID(const char* msg) {
-	uint8_t s_id = ARRAY_SIZE(TalkerID_Data);
-	for (uint8_t i = 0; i < s_id; i++) {
+	
+	for (uint8_t i = 0; i < TalkerID_Size; i++) {
 		if (strcmp(msg, TalkerID_Data[i].id) == 0) {
 			return TalkerID_Data[i].id_index;
 		}
@@ -131,8 +140,8 @@ uint8_t NMEA_Find_TalkerID(const char* msg) {
 }
 
 uint8_t NMEA_Find_PayloadID(const char* msg) {
-	uint8_t s_id = ARRAY_SIZE(PayloadID_Data);
-	for (uint8_t i = 0; i < s_id; i++) {
+	
+	for (uint8_t i = 0; i < PayloadID_Size; i++) {
 		if (strcmp(msg, PayloadID_Data[i].id) == 0) {
 			return PayloadID_Data[i].id_index;
 		}

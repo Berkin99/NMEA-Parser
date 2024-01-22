@@ -18,6 +18,8 @@
  *	Added GBS, RMC, GLL, GST, GSA, GSV, VTG, ZDA.
  *
  *	18.12.2023 : Compiler satisfy changes.
+ *  
+ *  18.01.2024 : ID search optimization.
  *
  *	References:
  *  [0] The National Marine Electronics Association (NMEA) 0183. Manual Klaus Betke, May 2000. Revised August 2001.
@@ -26,8 +28,8 @@
  *
  */
 
-#ifndef INC_NMEA_H_
-#define INC_NMEA_H_
+#ifndef NMEA_H_
+#define NMEA_H_
 
 #include <stdint.h>
 #include <string.h>
@@ -181,7 +183,7 @@ typedef struct NMEA_Payload_ZDA_s {
 	int32_t minute_offset;
 }NMEA_Payload_ZDA_t;
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 bool NMEA_Pack(NMEA_Message_t* ref, const uint8_t* raw_sentence);
 
@@ -205,7 +207,7 @@ uint8_t NMEA_Find_PayloadID(const char* msg);
  */
 uint8_t NMEA_Scan(const NMEA_Message_t* msg, const char* format, ...);
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t NMEA_GBS_Parse(NMEA_Payload_GBS_t* frame, const NMEA_Message_t* msg);
 
@@ -226,4 +228,4 @@ uint8_t NMEA_VTG_Parse(NMEA_Payload_VTG_t* frame, const NMEA_Message_t* msg);
 uint8_t NMEA_ZDA_Parse(NMEA_Payload_ZDA_t* frame, const NMEA_Message_t* msg);
 
 
-#endif /* INC_NMEA_H */
+#endif /* NMEA_H */
